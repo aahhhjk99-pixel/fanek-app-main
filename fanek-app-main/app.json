@@ -34,7 +34,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "baseUrl": "/fanek-app"
+      "baseUrl": "/fanek-app-main"
     }
   }
 }
