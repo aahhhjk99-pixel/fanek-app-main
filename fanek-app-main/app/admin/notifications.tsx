@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator
+  View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform
 } from 'react-native';
 import { router } from 'expo-router';
 import { ChevronLeft, Send, Bell, Trash2 } from 'lucide-react-native';
@@ -52,13 +52,16 @@ export default function AdminNotificationsScreen() {
 
   const handleSend = async () => {
     if (!profile || !title.trim() || !body.trim()) {
-      Alert.alert('تنبيه', 'يرجى كتابة عنوان الإشعار ونصل الرسالة');
+      if (Platform.OS === 'web') {
+        alert('تنبيه: يرجى كتابة عنوان الإشعار ونصل الرسالة');
+      } else {
+        Alert.alert('تنبيه', 'يرجى كتابة عنوان الإشعار ونصل الرسالة');
+      }
       return;
     }
 
     setSending(true);
     try {
-      // 1. حفظ الإشعار في قاعدة البيانات Supabase
       const { error: dbError } = await supabase
         .from('notifications')
         .insert({
@@ -70,7 +73,6 @@ export default function AdminNotificationsScreen() {
 
       if (dbError) throw dbError;
 
-      // 2. إعداد حمولة الإشعار لـ OneSignal
       const notificationPayload: any = {
         app_id: ONESIGNAL_APP_ID,
         headings: { ar: title.trim(), en: title.trim() },
@@ -86,7 +88,6 @@ export default function AdminNotificationsScreen() {
         ];
       }
 
-      // 3. إرسال الإشعار عبر API OneSignal
       const pushResponse = await fetch('https://onesignal.com/api/v1/notifications', {
         method: 'POST',
         headers: {
@@ -103,43 +104,61 @@ export default function AdminNotificationsScreen() {
         throw new Error(errorMsg);
       }
 
-      Alert.alert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
+      if (Platform.OS === 'web') {
+        alert('تم إرسال الإشعار بنجاح وحفظه في السجل!');
+      } else {
+        Alert.alert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
+      }
+
       setTitle('');
       setBody('');
       fetchHistory();
     } catch (err: any) {
-      Alert.alert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
+      if (Platform.OS === 'web') {
+        alert('خطأ: ' + (err.message || 'حدث خطأ أثناء إرسال الإشعار'));
+      } else {
+        Alert.alert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
+      }
     } finally {
       setSending(false);
     }
   };
 
-  // دالة حذف الإشعار من السجل
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      'تأكيد الحذف',
-      'هل أنت تأكد من حذف هذا الإشعار من السجل؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'حذف',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('notifications')
-                .delete()
-                .eq('id', id);
+  // دالة الحذف المخصصة المتوافقة مع الويب والموبايل
+  const handleDelete = async (id: string) => {
+    const executeDelete = async () => {
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .delete()
+          .eq('id', id);
 
-              if (error) throw error;
-              fetchHistory();
-            } catch (err: any) {
-              Alert.alert('خطأ', 'فشل حذف الإشعار من السجل');
-            }
-          },
-        },
-      ]
-    );
+        if (error) throw error;
+        fetchHistory();
+      } catch (err: any) {
+        if (Platform.OS === 'web') {
+          alert('فشل حذف الإشعار من السجل');
+        } else {
+          Alert.alert('خطأ', 'فشل حذف الإشعار من السجل');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('هل أنت تأكد من حذف هذا الإشعار من السجل؟');
+      if (confirmed) {
+        await executeDelete();
+      }
+    } else {
+      Alert.alert(
+        'تأكيد الحذف',
+        'هل أنت تأكد من حذف هذا الإشعار من السجل؟',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          { text: 'حذف', style: 'destructive', onPress: executeDelete },
+        ]
+      );
+    }
   };
 
   return (
@@ -269,7 +288,7 @@ const styles = StyleSheet.create({
   historyCard: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 10 },
   historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   historyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  deleteBtn: { padding: 4 },
+  deleteBtn: { padding: 6 },
   historyTitle: { fontFamily: 'Cairo-Bold', fontSize: 15 },
   historyBody: { fontFamily: 'Cairo-Regular', fontSize: 13, marginBottom: 6 },
   historyMeta: { fontFamily: 'Cairo-Regular', fontSize: 11 },
