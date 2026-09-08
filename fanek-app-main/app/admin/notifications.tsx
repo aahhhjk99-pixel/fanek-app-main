@@ -25,19 +25,20 @@ export default function AdminNotificationsScreen() {
   const [sending, setSending] = useState(false);
   const [history, setHistory] = useState<NotificationRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchHistory = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        setHistory(data);
-      }
-    } catch (e) {
-      console.error('Fetch history error:', e);
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (e: any) {
+      console.error('Fetch error:', e);
     } finally {
       setLoading(false);
     }
@@ -48,10 +49,8 @@ export default function AdminNotificationsScreen() {
   }, []);
 
   const showAlert = (titleMsg: string, bodyMsg: string) => {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined') {
-        window.alert(`${titleMsg}: ${bodyMsg}`);
-      }
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.alert(`${titleMsg}: ${bodyMsg}`);
     } else {
       Alert.alert(titleMsg, bodyMsg);
     }
@@ -65,8 +64,7 @@ export default function AdminNotificationsScreen() {
 
     setSending(true);
     try {
-      // إدخال الإشعار في Supabase وسيقوم الـ Trigger المباشر بإرساله فورا عبر OneSignal
-      const { error: dbError } = await supabase
+      const { error } = await supabase
         .from('notifications')
         .insert({
           title: title.trim(),
@@ -75,50 +73,40 @@ export default function AdminNotificationsScreen() {
           created_by: profile?.id || null,
         });
 
-      if (dbError) {
-        throw new Error(`خطأ في قاعدة البيانات: ${dbError.message}`);
-      }
+      if (error) throw error;
 
-      showAlert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
+      showAlert('نجاح', 'تم إرسال الإشعار وحفظه بنجاح');
       setTitle('');
       setBody('');
-      fetchHistory();
+      await fetchHistory();
     } catch (err: any) {
-      showAlert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
+      showAlert('خطأ', err.message || 'حدث خطأ أثناء الإرسال');
     } finally {
       setSending(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    const executeDelete = async () => {
-      try {
-        const { error } = await supabase
-          .from('notifications')
-          .delete()
-          .eq('id', id);
+    const confirmDelete = Platform.OS === 'web' 
+      ? (typeof window !== 'undefined' && window.confirm('هل أنت تأكد من حذف هذا الإشعار؟'))
+      : true;
 
-        if (error) throw error;
-        fetchHistory();
-      } catch (err: any) {
-        showAlert('خطأ', 'فشل حذف الإشعار من السجل');
-      }
-    };
+    if (!confirmDelete) return;
 
-    if (Platform.OS === 'web') {
-      const confirmed = typeof window !== 'undefined' && window.confirm('هل أنت تأكد من حذف هذا الإشعار من السجل؟');
-      if (confirmed) {
-        await executeDelete();
-      }
-    } else {
-      Alert.alert(
-        'تأكيد الحذف',
-        'هل أنت تأكد من حذف هذا الإشعار من السجل؟',
-        [
-          { text: 'إلغاء', style: 'cancel' },
-          { text: 'حذف', style: 'destructive', onPress: executeDelete },
-        ]
-      );
+    setDeletingId(id);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setHistory((prev) => prev.filter((item) => item.id !== id));
+    } catch (err: any) {
+      showAlert('خطأ', 'فشل حذف الإشعار من السجل');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -214,8 +202,16 @@ export default function AdminNotificationsScreen() {
                   <Bell color={colors.primary} size={18} />
                   <Text style={[styles.historyTitle, { color: colors.text }]}>{item.title}</Text>
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
-                  <Trash2 color="#ef4444" size={18} />
+                <TouchableOpacity 
+                  onPress={() => handleDelete(item.id)} 
+                  style={styles.deleteBtn}
+                  disabled={deletingId === item.id}
+                >
+                  {deletingId === item.id ? (
+                    <ActivityIndicator size="small" color="#ef4444" />
+                  ) : (
+                    <Trash2 color="#ef4444" size={18} />
+                  )}
                 </TouchableOpacity>
               </View>
               <Text style={[styles.historyBody, { color: colors.subtext }]}>{item.body}</Text>
