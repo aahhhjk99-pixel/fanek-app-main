@@ -68,7 +68,10 @@ export default function AdminNotificationsScreen() {
       if (dbError) throw dbError;
 
       // 2. جلب رموز الإشعارات (Push Tokens) للمستخدمين المستهدفين
-      let query = supabase.from('profiles').select('push_token').not('push_token', 'is', null);
+      let query = supabase
+        .from('profiles')
+        .select('push_token')
+        .not('push_token', 'is', null);
 
       if (targetType === 'customers') {
         query = query.eq('role', 'customer');
@@ -78,33 +81,51 @@ export default function AdminNotificationsScreen() {
 
       const { data: users, error: usersError } = await query;
 
-      if (!usersError && users && users.length > 0) {
-        const tokens = users.map(u => u.push_token).filter(Boolean);
+      if (usersError) throw usersError;
 
-        // 3. إرسال الإشعار عبر سيرفر Expo لظهر على شاشة القفل
-        if (tokens.length > 0) {
-          const messages = tokens.map(token => ({
-            to: token,
-            sound: 'default',
-            title: title.trim(),
-            body: body.trim(),
-            data: { targetType },
-          }));
+      // تصفية الرموز الصالحة
+      const tokens = (users || [])
+        .map(u => u.push_token)
+        .filter((t): t is string => typeof t === 'string' && t.trim().length > 0);
 
-          const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Accept-encoding': 'gzip, deflate',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(messages),
-          });
-          if (!pushResponse.ok) throw new Error('فشل إرسال إشعارات الهاتف');
-        }
+      // إذا لم يتوفر أي رمز للمستخدمين المستهدفين
+      if (tokens.length === 0) {
+        Alert.alert(
+          'تم الحفظ فقط',
+          'تم حفظ الإشعار في السجل، لكن لا يوجد مستخدمين يمتلكون رمز إشعارات (Push Token) في التطبيق حالياً.'
+        );
+        setTitle('');
+        setBody('');
+        fetchHistory();
+        return;
       }
 
-      Alert.alert('نجاح', 'تم إرسال الإشعار وحفظه بنجاح!');
+      // 3. إرسال الإشعار عبر سيرفر Expo
+      const messages = tokens.map(token => ({
+        to: token,
+        sound: 'default',
+        title: title.trim(),
+        body: body.trim(),
+        data: { targetType },
+      }));
+
+      const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messages),
+      });
+
+      const resData = await pushResponse.json();
+
+      if (!pushResponse.ok) {
+        throw new Error(resData.errors?.[0]?.message || 'فشل الاتصال بسيرفر Expo');
+      }
+
+      Alert.alert('نجاح', `تم إرسال الإشعار بنجاح إلى ${tokens.length} جهاز!`);
       setTitle('');
       setBody('');
       fetchHistory();
