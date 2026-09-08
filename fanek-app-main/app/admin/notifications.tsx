@@ -62,6 +62,7 @@ export default function AdminNotificationsScreen() {
 
     setSending(true);
     try {
+      // 1. حفظ الإشعار في قاعدة البيانات Supabase
       const { error: dbError } = await supabase
         .from('notifications')
         .insert({
@@ -73,6 +74,7 @@ export default function AdminNotificationsScreen() {
 
       if (dbError) throw dbError;
 
+      // 2. إعداد حمولة الإشعار لـ OneSignal
       const notificationPayload: any = {
         app_id: ONESIGNAL_APP_ID,
         headings: { ar: title.trim(), en: title.trim() },
@@ -88,7 +90,8 @@ export default function AdminNotificationsScreen() {
         ];
       }
 
-      const pushResponse = await fetch('https://onesignal.com/api/v1/notifications', {
+      // 3. إرسال الإشعار عبر API OneSignal مع البروكسي لتجاوز حظر CORS على الويب
+      const pushResponse = await fetch('https://corsproxy.io/?https://onesignal.com/api/v1/notifications', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
