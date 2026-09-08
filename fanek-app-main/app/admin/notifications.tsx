@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator
 } from 'react-native';
 import { router } from 'expo-router';
-import { ChevronLeft, Send, Bell } from 'lucide-react-native';
+import { ChevronLeft, Send, Bell, Trash2 } from 'lucide-react-native';
 import { useTheme } from '@/lib/theme-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
@@ -77,7 +77,6 @@ export default function AdminNotificationsScreen() {
         contents: { ar: body.trim(), en: body.trim() },
       };
 
-      // تحديد الشريحة أو الفلاتر حسب الجمهور المستهدف
       if (targetType === 'all') {
         notificationPayload.included_segments = ['Subscribed Users'];
       } else {
@@ -113,6 +112,34 @@ export default function AdminNotificationsScreen() {
     } finally {
       setSending(false);
     }
+  };
+
+  // دالة حذف الإشعار من السجل
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      'تأكيد الحذف',
+      'هل أنت تأكد من حذف هذا الإشعار من السجل؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'حذف',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('notifications')
+                .delete()
+                .eq('id', id);
+
+              if (error) throw error;
+              fetchHistory();
+            } catch (err: any) {
+              Alert.alert('خطأ', 'فشل حذف الإشعار من السجل');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -203,8 +230,13 @@ export default function AdminNotificationsScreen() {
           history.map((item) => (
             <View key={item.id} style={[styles.historyCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
               <View style={styles.historyHeader}>
-                <Bell color={colors.primary} size={18} />
-                <Text style={[styles.historyTitle, { color: colors.text }]}>{item.title}</Text>
+                <View style={styles.historyTitleRow}>
+                  <Bell color={colors.primary} size={18} />
+                  <Text style={[styles.historyTitle, { color: colors.text }]}>{item.title}</Text>
+                </View>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteBtn}>
+                  <Trash2 color="#ef4444" size={18} />
+                </TouchableOpacity>
               </View>
               <Text style={[styles.historyBody, { color: colors.subtext }]}>{item.body}</Text>
               <Text style={[styles.historyMeta, { color: colors.subtext }]}>
@@ -235,7 +267,9 @@ const styles = StyleSheet.create({
   sendBtnText: { color: '#fff', fontFamily: 'Cairo-Bold', fontSize: 15 },
   sectionTitle: { fontFamily: 'Cairo-SemiBold', fontSize: 18, marginBottom: 12 },
   historyCard: { padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 10 },
-  historyHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  historyTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  deleteBtn: { padding: 4 },
   historyTitle: { fontFamily: 'Cairo-Bold', fontSize: 15 },
   historyBody: { fontFamily: 'Cairo-Regular', fontSize: 13, marginBottom: 6 },
   historyMeta: { fontFamily: 'Cairo-Regular', fontSize: 11 },
