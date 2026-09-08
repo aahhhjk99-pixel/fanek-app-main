@@ -16,6 +16,9 @@ interface NotificationRecord {
   created_at: string;
 }
 
+const ONESIGNAL_APP_ID = '5290c04a-cf2c-4fd1-9ab5-d3c819acb8eb';
+const ONESIGNAL_REST_API_KEY = 'os_v2_app_kkimaswpfrh5dgvv2pebtlfy5m4brebkrj3ucpek63ltcroewxzpjinvn2en2ymex6t5zgsmgdycpdhhlsuyw2sneoi7mo6gfeg7upa';
+
 export default function AdminNotificationsScreen() {
   const { colors } = useTheme();
   const { profile } = useAuth();
@@ -55,7 +58,7 @@ export default function AdminNotificationsScreen() {
 
     setSending(true);
     try {
-      // 1. حفظ الإشعار في قاعدة البيانات
+      // 1. حفظ الإشعار في قاعدة البيانات Supabase
       const { error: dbError } = await supabase
         .from('notifications')
         .insert({
@@ -67,65 +70,41 @@ export default function AdminNotificationsScreen() {
 
       if (dbError) throw dbError;
 
-      // 2. جلب رموز الإشعارات (Push Tokens) للمستخدمين المستهدفين
-      let query = supabase
-        .from('profiles')
-        .select('push_token')
-        .not('push_token', 'is', null);
+      // 2. إعداد حمولة الإشعار لـ OneSignal
+      const notificationPayload: any = {
+        app_id: ONESIGNAL_APP_ID,
+        headings: { ar: title.trim(), en: title.trim() },
+        contents: { ar: body.trim(), en: body.trim() },
+      };
 
-      if (targetType === 'customers') {
-        query = query.eq('role', 'customer');
-      } else if (targetType === 'technicians') {
-        query = query.eq('role', 'technician');
+      // تحديد الشريحة أو الفلاتر حسب الجمهور المستهدف
+      if (targetType === 'all') {
+        notificationPayload.included_segments = ['Subscribed Users'];
+      } else {
+        const roleValue = targetType === 'customers' ? 'customer' : 'technician';
+        notificationPayload.filters = [
+          { field: 'tag', key: 'role', relation: '=', value: roleValue }
+        ];
       }
 
-      const { data: users, error: usersError } = await query;
-
-      if (usersError) throw usersError;
-
-      // تصفية الرموز الصالحة
-      const tokens = (users || [])
-        .map(u => u.push_token)
-        .filter((t): t is string => typeof t === 'string' && t.trim().length > 0);
-
-      // إذا لم يتوفر أي رمز للمستخدمين المستهدفين
-      if (tokens.length === 0) {
-        Alert.alert(
-          'تم الحفظ فقط',
-          'تم حفظ الإشعار في السجل، لكن لا يوجد مستخدمين يمتلكون رمز إشعارات (Push Token) في التطبيق حالياً.'
-        );
-        setTitle('');
-        setBody('');
-        fetchHistory();
-        return;
-      }
-
-      // 3. إرسال الإشعار عبر سيرفر Expo
-      const messages = tokens.map(token => ({
-        to: token,
-        sound: 'default',
-        title: title.trim(),
-        body: body.trim(),
-        data: { targetType },
-      }));
-
-      const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
+      // 3. إرسال الإشعار عبر API OneSignal
+      const pushResponse = await fetch('https://onesignal.com/api/v1/notifications', {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
-          'Accept-Encoding': 'gzip, deflate',
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': `Key ${ONESIGNAL_REST_API_KEY}`,
         },
-        body: JSON.stringify(messages),
+        body: JSON.stringify(notificationPayload),
       });
 
       const resData = await pushResponse.json();
 
-      if (!pushResponse.ok) {
-        throw new Error(resData.errors?.[0]?.message || 'فشل الاتصال بسيرفر Expo');
+      if (!pushResponse.ok || resData.errors) {
+        const errorMsg = Array.isArray(resData.errors) ? resData.errors[0] : 'فشل إرسال الإشعار عبر OneSignal';
+        throw new Error(errorMsg);
       }
 
-      Alert.alert('نجاح', `تم إرسال الإشعار بنجاح إلى ${tokens.length} جهاز!`);
+      Alert.alert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
       setTitle('');
       setBody('');
       fetchHistory();
