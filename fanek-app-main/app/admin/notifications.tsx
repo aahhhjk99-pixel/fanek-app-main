@@ -50,19 +50,24 @@ export default function AdminNotificationsScreen() {
     fetchHistory();
   }, []);
 
+  const showAlert = (titleMsg: string, bodyMsg: string) => {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.alert(`${titleMsg}: ${bodyMsg}`);
+      }
+    } else {
+      Alert.alert(titleMsg, bodyMsg);
+    }
+  };
+
   const handleSend = async () => {
     if (!profile || !title.trim() || !body.trim()) {
-      if (Platform.OS === 'web') {
-        alert('تنبيه: يرجى كتابة عنوان الإشعار ونصل الرسالة');
-      } else {
-        Alert.alert('تنبيه', 'يرجى كتابة عنوان الإشعار ونصل الرسالة');
-      }
+      showAlert('تنبيه', 'يرجى كتابة عنوان الإشعار ونصل الرسالة');
       return;
     }
 
     setSending(true);
     try {
-      // 1. حفظ الإشعار في قاعدة البيانات Supabase
       const { error: dbError } = await supabase
         .from('notifications')
         .insert({
@@ -74,7 +79,6 @@ export default function AdminNotificationsScreen() {
 
       if (dbError) throw dbError;
 
-      // 2. إعداد حمولة الإشعار لـ OneSignal
       const notificationPayload: any = {
         app_id: ONESIGNAL_APP_ID,
         headings: { ar: title.trim(), en: title.trim() },
@@ -90,7 +94,6 @@ export default function AdminNotificationsScreen() {
         ];
       }
 
-      // 3. إرسال الإشعار عبر API OneSignal مع البروكسي لتجاوز حظر CORS على الويب
       const pushResponse = await fetch('https://corsproxy.io/?https://onesignal.com/api/v1/notifications', {
         method: 'POST',
         headers: {
@@ -107,27 +110,17 @@ export default function AdminNotificationsScreen() {
         throw new Error(errorMsg);
       }
 
-      if (Platform.OS === 'web') {
-        alert('تم إرسال الإشعار بنجاح وحفظه في السجل!');
-      } else {
-        Alert.alert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
-      }
-
+      showAlert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
       setTitle('');
       setBody('');
       fetchHistory();
     } catch (err: any) {
-      if (Platform.OS === 'web') {
-        alert('خطأ: ' + (err.message || 'حدث خطأ أثناء إرسال الإشعار'));
-      } else {
-        Alert.alert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
-      }
+      showAlert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
     } finally {
       setSending(false);
     }
   };
 
-  // دالة الحذف المخصصة المتوافقة مع الويب والموبايل
   const handleDelete = async (id: string) => {
     const executeDelete = async () => {
       try {
@@ -139,16 +132,12 @@ export default function AdminNotificationsScreen() {
         if (error) throw error;
         fetchHistory();
       } catch (err: any) {
-        if (Platform.OS === 'web') {
-          alert('فشل حذف الإشعار من السجل');
-        } else {
-          Alert.alert('خطأ', 'فشل حذف الإشعار من السجل');
-        }
+        showAlert('خطأ', 'فشل حذف الإشعار من السجل');
       }
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm('هل أنت تأكد من حذف هذا الإشعار من السجل؟');
+      const confirmed = typeof window !== 'undefined' && window.confirm('هل أنت تأكد من حذف هذا الإشعار من السجل؟');
       if (confirmed) {
         await executeDelete();
       }
