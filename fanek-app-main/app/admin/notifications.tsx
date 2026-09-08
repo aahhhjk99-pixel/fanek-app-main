@@ -16,9 +16,6 @@ interface NotificationRecord {
   created_at: string;
 }
 
-const ONESIGNAL_APP_ID = '5290c04a-cf2c-4fd1-9ab5-d3c819acb8eb';
-const ONESIGNAL_REST_API_KEY = 'os_v2_app_kkimaswpfrh5dgvv2pebtlfy5m4brebkrj3ucpek63ltcroewxzpjinvn2en2ymex6t5zgsmgdycpdhhlsuyw2sneoi7mo6gfeg7upa';
-
 export default function AdminNotificationsScreen() {
   const { colors } = useTheme();
   const { profile } = useAuth();
@@ -68,7 +65,7 @@ export default function AdminNotificationsScreen() {
 
     setSending(true);
     try {
-      // 1. حفظ الإشعار في قاعدة البيانات Supabase
+      // إدخال الإشعار في Supabase وسيقوم الـ Trigger المباشر بإرساله فورا عبر OneSignal
       const { error: dbError } = await supabase
         .from('notifications')
         .insert({
@@ -82,60 +79,12 @@ export default function AdminNotificationsScreen() {
         throw new Error(`خطأ في قاعدة البيانات: ${dbError.message}`);
       }
 
-      // 2. إعداد حمولة الإشعار لـ OneSignal
-      const notificationPayload: any = {
-        app_id: ONESIGNAL_APP_ID,
-        headings: { ar: title.trim(), en: title.trim() },
-        contents: { ar: body.trim(), en: body.trim() },
-      };
-
-      if (targetType === 'all') {
-        notificationPayload.included_segments = ['Subscribed Users'];
-      } else {
-        const roleValue = targetType === 'customers' ? 'customer' : 'technician';
-        notificationPayload.filters = [
-          { field: 'tag', key: 'role', relation: '=', value: roleValue }
-        ];
-      }
-
-      // 3. محاولة إرسال الإشعار عبر OneSignal
-      let pushSuccess = false;
-      const proxyUrls = [
-        'https://corsproxy.io/?https://onesignal.com/api/v1/notifications',
-        'https://onesignal.com/api/v1/notifications'
-      ];
-
-      for (const url of proxyUrls) {
-        try {
-          const pushResponse = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=utf-8',
-              'Authorization': `Key ${ONESIGNAL_REST_API_KEY}`,
-            },
-            body: JSON.stringify(notificationPayload),
-          });
-
-          if (pushResponse.ok) {
-            pushSuccess = true;
-            break;
-          }
-        } catch (e) {
-          // تجاوز خطأ CORS في المتصفح بأمان
-        }
-      }
-
-      if (pushSuccess) {
-        showAlert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
-      } else {
-        showAlert('نجاح', 'تم حفظ الإشعار في السجل بنجاح!');
-      }
-
+      showAlert('نجاح', 'تم إرسال الإشعار بنجاح وحفظه في السجل!');
       setTitle('');
       setBody('');
       fetchHistory();
     } catch (err: any) {
-      showAlert('خطأ', err.message || 'حدث خطأ أثناء حفظ الإشعار');
+      showAlert('خطأ', err.message || 'حدث خطأ أثناء إرسال الإشعار');
     } finally {
       setSending(false);
     }
