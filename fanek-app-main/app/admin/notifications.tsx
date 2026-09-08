@@ -8,6 +8,9 @@ import { useTheme } from '@/lib/theme-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 
+const ONESIGNAL_APP_ID = '5290c04a-cf2c-4fd1-9ab5-d3c819acb8eb';
+const ONESIGNAL_REST_KEY = 'os_v2_app_kkimaswpfrh5dgvv2pebtlfy5pgm77qcr7oegre3boutxgw56hieme7yrzdwnkdg3sjwh2d3dd7lsfbz4e42m4lbtrd77xif7hmoezy';
+
 interface NotificationRecord {
   id: string;
   title: string;
@@ -64,18 +67,45 @@ export default function AdminNotificationsScreen() {
 
     setSending(true);
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          title: title.trim(),
-          body: body.trim(),
-          target_type: targetType,
-          created_by: profile?.id || null,
-        });
+      // 1. الإرسال المباشر إلى OneSignal
+      const payload: any = {
+        app_id: ONESIGNAL_APP_ID,
+        headings: { ar: title.trim(), en: title.trim() },
+        contents: { ar: body.trim(), en: body.trim() },
+      };
 
-      if (error) throw error;
+      if (targetType === 'all') {
+        payload.included_segments = ['Subscribed Users', 'Total Subscriptions'];
+      } else {
+        payload.filters = [
+          { field: 'tag', key: 'role', relation: '=', value: targetType === 'customers' ? 'customer' : 'technician' }
+        ];
+      }
 
-      showAlert('نجاح', 'تم إرسال الإشعار وحفظه بنجاح');
+      const res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Key ${ONESIGNAL_REST_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(resData?.errors?.[0] || 'فشل الإرسال عبر OneSignal');
+      }
+
+      // 2. حفظ الإشعار في Supabase للرصد
+      await supabase.from('notifications').insert({
+        title: title.trim(),
+        body: body.trim(),
+        target_type: targetType,
+        created_by: profile?.id || null,
+      });
+
+      showAlert('نجاح', `تم إرسال الإشعار بنجاح! عدد المستلمين: ${resData.recipients || 0}`);
       setTitle('');
       setBody('');
       await fetchHistory();
@@ -87,12 +117,6 @@ export default function AdminNotificationsScreen() {
   };
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = Platform.OS === 'web' 
-      ? (typeof window !== 'undefined' && window.confirm('هل أنت تأكد من حذف هذا الإشعار؟'))
-      : true;
-
-    if (!confirmDelete) return;
-
     setDeletingId(id);
     try {
       const { error } = await supabase
@@ -101,10 +125,9 @@ export default function AdminNotificationsScreen() {
         .eq('id', id);
 
       if (error) throw error;
-
       setHistory((prev) => prev.filter((item) => item.id !== id));
     } catch (err: any) {
-      showAlert('خطأ', 'فشل حذف الإشعار من السجل');
+      showAlert('خطأ', 'فشل حذف الإشعار');
     } finally {
       setDeletingId(null);
     }
@@ -191,7 +214,7 @@ export default function AdminNotificationsScreen() {
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
         ) : history.length === 0 ? (
-          <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 20, fontFamily: 'Cairo-Regular' }}>
+          <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 20 }}>
             لا توجد إشعارات مرسلة سابقة
           </Text>
         ) : (
