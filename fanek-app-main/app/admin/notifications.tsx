@@ -8,9 +8,6 @@ import { useTheme } from '@/lib/theme-context';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 
-const ONESIGNAL_APP_ID = '5290c04a-cf2c-4fd1-9ab5-d3c819acb8eb';
-const ONESIGNAL_REST_KEY = 'os_v2_app_kkimaswpfrh5dgvv2pebtlfy5pgm77qcr7oegre3boutxgw56hieme7yrzdwnkdg3sjwh2d3dd7lsfbz4e42m4lbtrd77xif7hmoezy';
-
 interface NotificationRecord {
   id: string;
   title: string;
@@ -61,51 +58,24 @@ export default function AdminNotificationsScreen() {
 
   const handleSend = async () => {
     if (!title.trim() || !body.trim()) {
-      showAlert('تنبيه', 'يرجى كتابة عنوان الإشعار ونصل الرسالة');
+      showAlert('تنبيه', 'يرجى كتابة عنوان الإشعار ونص الرسالة');
       return;
     }
 
     setSending(true);
     try {
-      // 1. الإرسال المباشر إلى OneSignal
-      const payload: any = {
-        app_id: ONESIGNAL_APP_ID,
-        headings: { ar: title.trim(), en: title.trim() },
-        contents: { ar: body.trim(), en: body.trim() },
-      };
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          title: title.trim(),
+          body: body.trim(),
+          target_type: targetType,
+          created_by: profile?.id || null,
+        });
 
-      if (targetType === 'all') {
-        payload.included_segments = ['Subscribed Users', 'Total Subscriptions'];
-      } else {
-        payload.filters = [
-          { field: 'tag', key: 'role', relation: '=', value: targetType === 'customers' ? 'customer' : 'technician' }
-        ];
-      }
+      if (error) throw error;
 
-      const res = await fetch('https://onesignal.com/api/v1/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Key ${ONESIGNAL_REST_KEY}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const resData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(resData?.errors?.[0] || 'فشل الإرسال عبر OneSignal');
-      }
-
-      // 2. حفظ الإشعار في Supabase للرصد
-      await supabase.from('notifications').insert({
-        title: title.trim(),
-        body: body.trim(),
-        target_type: targetType,
-        created_by: profile?.id || null,
-      });
-
-      showAlert('نجاح', `تم إرسال الإشعار بنجاح! عدد المستلمين: ${resData.recipients || 0}`);
+      showAlert('نجاح', 'تم إرسال الإشعار وحفظه بنجاح');
       setTitle('');
       setBody('');
       await fetchHistory();
