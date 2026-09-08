@@ -51,6 +51,26 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // تهيئة إشعارات OneSignal للمتصفح والويب تلقائياً
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      (window as any).OneSignalDeferred.push(async function(OneSignal: any) {
+        await OneSignal.init({
+          appId: "5290c04a-cf2c-4fd1-9ab5-d3c819acb8eb",
+        });
+      });
+
+      if (!document.getElementById('onesignal-sdk')) {
+        const script = document.createElement('script');
+        script.id = 'onesignal-sdk';
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+        script.async = true;
+        document.head.appendChild(script);
+      }
+    }
+  }, []);
+
   // تسجيل الإشعارات بطريقة آمنة لا تسبب شاشة بيضاء في حال الفشل
   useEffect(() => {
     let listener: any;
