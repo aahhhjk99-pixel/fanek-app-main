@@ -1,18 +1,16 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Home, Wrench, Shield, ChevronLeft, Sparkles, Star } from 'lucide-react-native';
 import { BRAND_NAME, BRAND_NAME_EN, BRAND_LOGO } from '@/lib/constants';
 import { useTheme } from '@/lib/theme-context';
-import { useAuth } from '@/lib/auth'; // تم تصحيح المسار من auth-context إلى auth
+import { useAuth } from '@/lib/auth';
 
 export default function RoleSelectionScreen() {
   const theme = useTheme();
   const auth = useAuth();
 
-  // قراءة آمنة مع قيم افتراضية لتفادي الانهيار
-  const colors = theme?.colors || {};
   const session = auth?.session;
   const loading = auth?.loading;
 
@@ -28,7 +26,7 @@ export default function RoleSelectionScreen() {
       title: 'زبون',
       subtitle: 'اطلب خدمات الصيانة المنزلية',
       icon: Home,
-      color: ['#2563eb', '#1d4ed8'] as [string, string],
+      color: ['#D4AF37', '#AA771C'] as [string, string],
       route: '/(auth)/customer-signup' as const,
     },
     {
@@ -36,17 +34,20 @@ export default function RoleSelectionScreen() {
       title: 'فني',
       subtitle: 'قدّم خدماتك واكسب الدخل',
       icon: Wrench,
-      color: ['#16a34a', '#15803d'] as [string, string],
+      color: ['#F3CA63', '#B87B10'] as [string, string],
       route: '/(auth)/technician-signup' as const,
     },
   ];
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg || '#ffffff' }]}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B0B0E" />
+      
+      {/* Header / الهيدر الملكي */}
+      <LinearGradient colors={['#16161A', '#0B0B0E']} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.logoCircle}>
-            <Star color="#fff" size={36} fill="#fff" />
+            <Star color="#D4AF37" size={36} fill="#D4AF37" />
           </View>
           <Text style={styles.appName}>{BRAND_NAME} {BRAND_LOGO}</Text>
           <Text style={styles.appNameEn}>{BRAND_NAME_EN}</Text>
@@ -54,43 +55,46 @@ export default function RoleSelectionScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.body}>
-        <View style={[styles.promoBanner, { backgroundColor: colors.promoBg || '#f3f4f6', borderColor: colors.promoBorder || '#e5e7eb' }]}>
-          <Sparkles color={colors.accent || '#2563eb'} size={20} />
-          <Text style={[styles.promoText, { color: colors.promoText || '#1f2937' }]}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Banner / كرت العروض */}
+        <View style={styles.promoBanner}>
+          <Sparkles color="#D4AF37" size={20} />
+          <Text style={styles.promoText}>
             عروض الانطلاق: خصم 10 د.ل للزبون على أول صيانة • 20 د.ل رصيد مجاني للفني عند التوثيق
           </Text>
         </View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text || '#111827' }]}>اختر نوع الحساب</Text>
+        <Text style={styles.sectionTitle}>اختر نوع الحساب</Text>
 
+        {/* Roles Cards / كروت الخيارات */}
         {roles.map((role) => {
           const Icon = role.icon;
           return (
             <TouchableOpacity
               key={role.id}
-              style={[styles.roleCard, { backgroundColor: colors.cardBg || '#ffffff', borderColor: colors.border || '#e5e7eb' }]}
+              style={styles.roleCard}
               onPress={() => router.push(role.route)}
               activeOpacity={0.85}
             >
               <LinearGradient colors={role.color} style={styles.roleIcon}>
-                <Icon color="#fff" size={28} />
+                <Icon color="#0B0B0E" size={28} />
               </LinearGradient>
               <View style={styles.roleInfo}>
-                <Text style={[styles.roleTitle, { color: colors.text || '#111827' }]}>{role.title}</Text>
-                <Text style={[styles.roleSubtitle, { color: colors.subtext || '#6b7280' }]}>{role.subtitle}</Text>
+                <Text style={styles.roleTitle}>{role.title}</Text>
+                <Text style={styles.roleSubtitle}>{role.subtitle}</Text>
               </View>
-              <ChevronLeft color={colors.subtext || '#6b7280'} size={24} />
+              <ChevronLeft color="#D4AF37" size={24} />
             </TouchableOpacity>
           );
         })}
 
+        {/* Admin Login Link / رابط دخول الأدمن */}
         <TouchableOpacity
           style={styles.adminLink}
           onPress={() => router.push('/(auth)/login')}
         >
-          <Shield color={colors.subtext || '#6b7280'} size={18} />
-          <Text style={[styles.adminText, { color: colors.subtext || '#6b7280' }]}>دخول الأدمن / تسجيل الدخول</Text>
+          <Shield color="#A1A1AA" size={18} />
+          <Text style={styles.adminText}>دخول الأدمن / تسجيل الدخول</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -98,46 +102,57 @@ export default function RoleSelectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0B0B0E' },
   header: {
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 36,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
   },
   headerContent: { alignItems: 'center' },
   logoCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    borderWidth: 1.5,
+    borderColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   appName: {
     fontFamily: 'Cairo-Bold',
-    fontSize: 32,
-    color: '#fff',
+    fontSize: 30,
+    color: '#D4AF37',
   },
   appNameEn: {
     fontFamily: 'Cairo-Bold',
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 15,
+    color: '#F3CA63',
     marginTop: 2,
     letterSpacing: 2,
   },
   tagline: {
     fontFamily: 'Cairo-Regular',
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
+    fontSize: 13,
+    color: '#A1A1AA',
     marginTop: 6,
   },
   body: { padding: 24 },
   promoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#16161A',
     borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -146,30 +161,34 @@ const styles = StyleSheet.create({
   promoText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 13,
+    color: '#E4E4E7',
     flex: 1,
     lineHeight: 20,
   },
   sectionTitle: {
     fontFamily: 'Cairo-SemiBold',
-    fontSize: 18,
+    fontSize: 17,
+    color: '#E4E4E7',
     marginBottom: 16,
   },
   roleCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#16161A',
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
   roleIcon: {
-    width: 56,
-    height: 56,
+    width: 54,
+    height: 54,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -178,10 +197,12 @@ const styles = StyleSheet.create({
   roleTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 18,
+    color: '#FFFFFF',
   },
   roleSubtitle: {
     fontFamily: 'Cairo-Regular',
     fontSize: 13,
+    color: '#A1A1AA',
     marginTop: 2,
   },
   adminLink: {
@@ -195,5 +216,6 @@ const styles = StyleSheet.create({
   adminText: {
     fontFamily: 'Cairo-Medium',
     fontSize: 14,
+    color: '#A1A1AA',
   },
 });

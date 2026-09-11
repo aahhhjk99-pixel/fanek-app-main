@@ -1,10 +1,12 @@
 import { Tabs, Redirect } from 'expo-router';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Platform } from 'react-native';
 import { Home, ClipboardList, User, Wallet, LayoutDashboard, LifeBuoy } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const auth = useAuth();
   const theme = useTheme();
 
@@ -71,6 +73,10 @@ export default function TabLayout() {
     return { title: '', icon: Home, show: false };
   };
 
+  // حساب المساحة السفلية الآمنة لمنع التداخل مع أزرار الهاتف
+  const bottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 8);
+  const calculatedHeight = 56 + bottomPadding;
+
   return (
     <Tabs
       screenOptions={{
@@ -79,14 +85,16 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors?.subtext || '#6b7280',
         tabBarLabelStyle: {
           fontFamily: 'Cairo-Medium',
-          fontSize: 12,
+          fontSize: 11,
+          paddingBottom: 2,
         },
         tabBarStyle: {
           backgroundColor: colors?.tabBarBg || '#ffffff',
           borderTopColor: colors?.tabBarBorder || '#e5e7eb',
           borderTopWidth: 1,
-          paddingBottom: 4,
-          height: 60,
+          paddingBottom: bottomPadding,
+          paddingTop: 6,
+          height: calculatedHeight,
         },
       }}
     >

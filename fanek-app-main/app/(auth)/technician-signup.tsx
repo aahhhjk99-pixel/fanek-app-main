@@ -12,7 +12,6 @@ import { useTheme } from '@/lib/theme-context';
 import * as Location from 'expo-location';
 import { getAuthEmailForPhone, isValidLibyaPhone, normalizeLibyaPhone } from '@/lib/phone';
 
-// رقم الواتساب الخاص بالإدارة المخصص لاستلام الصور والوثائق
 const ADMIN_WHATSAPP = '218930656956';
 
 export default function TechnicianSignupScreen() {
@@ -32,25 +31,25 @@ export default function TechnicianSignupScreen() {
   const getLocation = async () => {
     try {
       if (Platform.OS !== 'web') {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (permission.status !== Location.PermissionStatus.GRANTED) {
-        setError('يجب السماح باستخدام الموقع لإكمال التسجيل');
-        return;
-      }
-      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setLat(current.coords.latitude);
-      setLng(current.coords.longitude);
-      setAddress(`${current.coords.latitude.toFixed(4)}, ${current.coords.longitude.toFixed(4)}`);
-    } else if (typeof navigator !== 'undefined' && navigator?.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLat(pos.coords.latitude);
-          setLng(pos.coords.longitude);
-          setAddress(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-        },
-        () => setError('تعذر الحصول على الموقع'),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+        const permission = await Location.requestForegroundPermissionsAsync();
+        if (permission.status !== Location.PermissionStatus.GRANTED) {
+          setError('يجب السماح باستخدام الموقع لإكمال التسجيل');
+          return;
+        }
+        const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setLat(current.coords.latitude);
+        setLng(current.coords.longitude);
+        setAddress(`${current.coords.latitude.toFixed(4)}, ${current.coords.longitude.toFixed(4)}`);
+      } else if (typeof navigator !== 'undefined' && navigator?.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLat(pos.coords.latitude);
+            setLng(pos.coords.longitude);
+            setAddress(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+          },
+          () => setError('تعذر الحصول على الموقع'),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
       } else {
         setError('تعذر الوصول إلى خدمة الموقع');
       }
@@ -72,8 +71,7 @@ export default function TechnicianSignupScreen() {
     try {
       const normalizedPhone = normalizeLibyaPhone(phone);
       const email = getAuthEmailForPhone(normalizedPhone);
-      
-      // 1. تسجيل المستخدم وإمرارية role في auth metadata
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -91,7 +89,6 @@ export default function TechnicianSignupScreen() {
 
       const user = authData.user;
 
-      // 2. تحديث الملف الشخصي عبر upsert بدون رفع صور لتوفير Egress
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
         full_name: fullName.trim(),
@@ -109,7 +106,6 @@ export default function TechnicianSignupScreen() {
 
       if (profileError) throw new Error(profileError.message);
 
-      // 3. تهيئة المحفظة ومكافأة التسجيل بشكل ذري من الخادم
       const { error: walletError } = await supabase.rpc('initialize_technician_wallet');
       if (walletError) throw new Error(walletError.message);
 
@@ -136,7 +132,7 @@ export default function TechnicianSignupScreen() {
             style={[styles.agreeBtn, agreed && styles.agreeBtnActive]}
             onPress={() => { setAgreed(true); setShowTerms(false); }}
           >
-            <Check color="#fff" size={20} />
+            <Check color="#000" size={20} />
             <Text style={styles.agreeBtnText}>موافق على الشروط</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -146,20 +142,22 @@ export default function TechnicianSignupScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <LinearGradient colors={['#16a34a', '#15803d']} style={styles.header}>
+      {/* التدرج الذهبي مع البرونزي النحاسي للفني */}
+      <LinearGradient colors={['#D4AF37', '#B45309']} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronRight color="#fff" size={24} />
+          <ChevronRight color="#000" size={24} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Star color="#fff" size={18} fill="#fff" />
+          <Star color="#000" size={18} fill="#000" />
           <Text style={styles.headerTitle}>{BRAND_NAME} {BRAND_LOGO}</Text>
         </View>
       </LinearGradient>
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={[styles.pageTitle, { color: colors.text }]}>تسجيل فني جديد</Text>
-        <View style={[styles.promoCard, { backgroundColor: colors.promoBg, borderColor: colors.promoBorder }]}>
-          <Text style={[styles.promoTitle, { color: colors.promoTitle }]}>عرض الانطلاق للفنيين!</Text>
+        
+        <View style={[styles.promoCard, { backgroundColor: colors.promoBg, borderColor: '#D4AF37' }]}>
+          <Text style={[styles.promoTitle, { color: '#D4AF37' }]}>عرض الانطلاق للفنيين!</Text>
           <Text style={[styles.promoDesc, { color: colors.promoText }]}>
             {PROMO_TECHNICIAN_BONUS} {CURRENCY} رصيد مجاني عند التوثيق • عمولة المنصة {COMMISSION_RATE}%
           </Text>
@@ -212,11 +210,11 @@ export default function TechnicianSignupScreen() {
                 style={[
                   styles.categoryChip,
                   { backgroundColor: colors.chipBg, borderColor: colors.border },
-                  specialty === cat.id && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  specialty === cat.id && { backgroundColor: '#D4AF37', borderColor: '#D4AF37' },
                 ]}
                 onPress={() => setSpecialty(cat.id)}
               >
-                <Text style={[styles.categoryText, { color: colors.chipText }, specialty === cat.id && { color: colors.chipActiveText }]}>
+                <Text style={[styles.categoryText, { color: colors.chipText }, specialty === cat.id && { color: '#000' }]}>
                   {cat.name}
                 </Text>
               </TouchableOpacity>
@@ -230,17 +228,16 @@ export default function TechnicianSignupScreen() {
             style={[styles.locationBtn, { backgroundColor: colors.cardBg, borderColor: colors.inputBorder }]}
             onPress={getLocation}
           >
-            <MapPin color={lat ? colors.success : colors.primary} size={20} />
+            <MapPin color={lat ? '#D4AF37' : colors.subtext} size={20} />
             <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
               {lat ? address : 'اضغط لتحديد موقعك'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* بطاقة توجيه للواتساب لإرسال المستندات والصور للإدارة */}
-        <View style={[styles.whatsappCard, { backgroundColor: colors.cardBg, borderColor: '#22c55e' }]}>
+        <View style={[styles.whatsappCard, { backgroundColor: colors.cardBg, borderColor: '#D4AF37' }]}>
           <View style={styles.whatsappHeader}>
-            <MessageCircle color="#22c55e" size={22} />
+            <MessageCircle color="#D4AF37" size={22} />
             <Text style={[styles.whatsappTitle, { color: colors.text }]}>إرسال وثائق التوثيق والصور عبر الواتساب</Text>
           </View>
           <Text style={[styles.whatsappDesc, { color: colors.subtext }]}>
@@ -254,14 +251,14 @@ export default function TechnicianSignupScreen() {
               Linking.openURL(`https://wa.me/${formattedPhone}?text=${message}`);
             }}
           >
-            <MessageCircle color="#fff" size={18} />
+            <MessageCircle color="#000" size={18} />
             <Text style={styles.whatsappBtnText}>إرسال الوثائق عبر الواتساب ({ADMIN_WHATSAPP})</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.termsRow} onPress={() => setShowTerms(true)}>
-          <View style={[styles.checkbox, agreed && [styles.checkboxActive, { backgroundColor: colors.success, borderColor: colors.success }]]}>
-            {agreed && <Check color="#fff" size={16} />}
+          <View style={[styles.checkbox, agreed && [styles.checkboxActive, { backgroundColor: '#D4AF37', borderColor: '#D4AF37' }]]}>
+            {agreed && <Check color="#000" size={16} />}
           </View>
           <Text style={[styles.termsTextSmall, { color: colors.text }]}>
             أوافق على شروط العمل والعمولة ({COMMISSION_RATE}%)
@@ -271,7 +268,7 @@ export default function TechnicianSignupScreen() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <TouchableOpacity
-          style={[styles.signupBtn, { backgroundColor: colors.success }, loading && styles.signupBtnDisabled]}
+          style={[styles.signupBtn, { backgroundColor: '#D4AF37' }, loading && styles.signupBtnDisabled]}
           onPress={handleSignup}
           disabled={loading}
         >
@@ -298,7 +295,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 18,
-    color: '#fff',
+    color: '#000',
   },
   pageTitle: {
     fontFamily: 'Cairo-Bold',
@@ -402,7 +399,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   whatsappBtn: {
-    backgroundColor: '#22c55e',
+    backgroundColor: '#D4AF37',
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -414,7 +411,7 @@ const styles = StyleSheet.create({
   whatsappBtnText: {
     fontFamily: 'Cairo-Bold',
     fontSize: 14,
-    color: '#fff',
+    color: '#000',
   },
   termsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   checkbox: {
@@ -426,9 +423,9 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: 'Cairo-Regular', fontSize: 14, color: '#ef4444', marginBottom: 16, textAlign: 'center' },
   signupBtn: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   signupBtnDisabled: { opacity: 0.6 },
-  signupBtnText: { fontFamily: 'Cairo-Bold', fontSize: 16, color: '#fff' },
+  signupBtnText: { fontFamily: 'Cairo-Bold', fontSize: 16, color: '#000' },
   termsHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, paddingTop: 50, backgroundColor: '#16a34a',
+    flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, paddingTop: 50, backgroundColor: '#B45309',
   },
   termsTitle: { fontFamily: 'Cairo-Bold', fontSize: 20, color: '#fff' },
   termsBody: { padding: 24, paddingBottom: 40 },
@@ -437,6 +434,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#9ca3af', borderRadius: 16, paddingVertical: 16, marginTop: 24,
   },
-  agreeBtnActive: { backgroundColor: '#16a34a' },
-  agreeBtnText: { fontFamily: 'Cairo-Bold', fontSize: 16, color: '#fff' },
+  agreeBtnActive: { backgroundColor: '#D4AF37' },
+  agreeBtnText: { fontFamily: 'Cairo-Bold', fontSize: 16, color: '#000' },
 });

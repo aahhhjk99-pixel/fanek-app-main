@@ -35,7 +35,7 @@ import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/constants';
 import type { Order, Dispute, Profile } from '@/types/database';
 
 export default function AdminDashboardScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { show } = useToast();
 
   const [stats, setStats] = useState({
@@ -242,7 +242,7 @@ export default function AdminDashboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       {/* الهيدر الرئيسي */}
-      <View style={[styles.header, { backgroundColor: colors.headerBg, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.headerBg || colors.cardBg, borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ChevronLeft color={colors.text} size={24} />
@@ -269,13 +269,13 @@ export default function AdminDashboardScreen() {
           </View>
 
           <View style={styles.profitsGrid}>
-            <View style={[styles.profitBox, { backgroundColor: colors.primary + '10' }]}>
+            <View style={[styles.profitBox, { backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : '#eff6ff' }]}>
               <Text style={[styles.profitLabel, { color: colors.subtext }]}>صافي عمولة المنصة</Text>
-              <Text style={[styles.profitValue, { color: colors.success }]}>
+              <Text style={[styles.profitValue, { color: colors.success || '#16a34a' }]}>
                 {formatCurrency(stats.platformCommission)}
               </Text>
             </View>
-            <View style={[styles.profitBox, { backgroundColor: colors.primary + '10' }]}>
+            <View style={[styles.profitBox, { backgroundColor: isDark ? 'rgba(37,99,235,0.15)' : '#eff6ff' }]}>
               <Text style={[styles.profitLabel, { color: colors.subtext }]}>إجمالي الفواتير</Text>
               <Text style={[styles.profitValue, { color: colors.primary }]}>
                 {formatCurrency(stats.totalRevenue)}
@@ -299,7 +299,7 @@ export default function AdminDashboardScreen() {
             style={[styles.quickBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
             onPress={() => router.push('/admin/disputes')}
           >
-            <AlertTriangle color={colors.error} size={20} />
+            <AlertTriangle color={colors.error || '#ef4444'} size={20} />
             <Text style={[styles.quickBtnText, { color: colors.text }]}>النزاعات</Text>
           </TouchableOpacity>
 
@@ -307,7 +307,7 @@ export default function AdminDashboardScreen() {
             style={[styles.quickBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
             onPress={() => router.push('/admin/notifications' as any)}
           >
-            <Bell color="#d97706" size={20} />
+            <Bell color="#f59e0b" size={20} />
             <Text style={[styles.quickBtnText, { color: colors.text }]}>الإشعارات</Text>
           </TouchableOpacity>
 
@@ -323,7 +323,7 @@ export default function AdminDashboardScreen() {
             style={[styles.quickBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
             onPress={() => router.push('/admin/services' as any)}
           >
-            <ListChecks color={colors.success} size={20} />
+            <ListChecks color={colors.success || '#16a34a'} size={20} />
             <Text style={[styles.quickBtnText, { color: colors.text }]}>الخدمات</Text>
           </TouchableOpacity>
 
@@ -331,7 +331,7 @@ export default function AdminDashboardScreen() {
             style={[styles.quickBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
             onPress={() => router.push('/admin/support-config')}
           >
-            <Settings color="#6b7280" size={20} />
+            <Settings color={colors.subtext} size={20} />
             <Text style={[styles.quickBtnText, { color: colors.text }]}>الإعدادات</Text>
           </TouchableOpacity>
         </View>
@@ -344,7 +344,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.7}
             onPress={() => router.push('/admin/users')}
           >
-            <Users color="#2563eb" size={20} />
+            <Users color="#3b82f6" size={20} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalCustomers}</Text>
             <Text style={[styles.statLabel, { color: colors.subtext }]}>الزبائن</Text>
           </TouchableOpacity>
@@ -354,7 +354,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.7}
             onPress={() => router.push('/admin/users')}
           >
-            <Wrench color="#16a34a" size={20} />
+            <Wrench color="#22c55e" size={20} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalTechnicians}</Text>
             <Text style={[styles.statLabel, { color: colors.subtext }]}>الفنيون</Text>
           </TouchableOpacity>
@@ -384,7 +384,7 @@ export default function AdminDashboardScreen() {
             activeOpacity={0.7}
             onPress={() => router.push('/(tabs)/orders' as any)}
           >
-            <ClipboardList color="#6366f1" size={20} />
+            <ClipboardList color="#818cf8" size={20} />
             <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalOrders}</Text>
             <Text style={[styles.statLabel, { color: colors.subtext }]}>إجمالي الطلبات</Text>
           </TouchableOpacity>
@@ -438,19 +438,19 @@ export default function AdminDashboardScreen() {
                 ) : (
                   <View style={styles.actionBtnsRow}>
                     <TouchableOpacity
-                      style={[styles.verifyBtn, { backgroundColor: colors.success + '20' }]}
+                      style={[styles.verifyBtn, { backgroundColor: '#16a34a20' }]}
                       onPress={() => verifyTech(tech, 'approved')}
                     >
-                      <CheckCircle2 color={colors.success} size={16} />
-                      <Text style={[styles.verifyText, { color: colors.success }]}>قبول</Text>
+                      <CheckCircle2 color="#16a34a" size={16} />
+                      <Text style={[styles.verifyText, { color: '#16a34a' }]}>قبول</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.verifyBtn, { backgroundColor: colors.error + '20' }]}
+                      style={[styles.verifyBtn, { backgroundColor: '#ef444420' }]}
                       onPress={() => verifyTech(tech, 'rejected')}
                     >
-                      <XCircle color={colors.error} size={16} />
-                      <Text style={[styles.verifyText, { color: colors.error }]}>رفض</Text>
+                      <XCircle color="#ef4444" size={16} />
+                      <Text style={[styles.verifyText, { color: '#ef4444' }]}>رفض</Text>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -551,21 +551,20 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: 'Cairo-Bold', fontSize: 16, marginBottom: 12, marginTop: 8 },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   statCard: {
-    width: '23%',
-    flexGrow: 1,
+    width: '48%',
     borderRadius: 14,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
-  statValue: { fontFamily: 'Cairo-Bold', fontSize: 16 },
-  statLabel: { fontFamily: 'Cairo-Regular', fontSize: 11, textAlign: 'center' },
+  statValue: { fontFamily: 'Cairo-Bold', fontSize: 18 },
+  statLabel: { fontFamily: 'Cairo-Regular', fontSize: 12, textAlign: 'center' },
 
   techCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between', // تم التصحيح هنا
+    justifyContent: 'space-between',
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,

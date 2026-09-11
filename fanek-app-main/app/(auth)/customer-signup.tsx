@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Phone, MapPin, Check, Star } from 'lucide-react-native';
@@ -37,15 +37,15 @@ export default function CustomerSignupScreen() {
         setLng(current.coords.longitude);
         setAddress(`${current.coords.latitude.toFixed(4)}, ${current.coords.longitude.toFixed(4)}`);
       } else if (typeof navigator !== 'undefined' && navigator?.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLat(pos.coords.latitude);
-          setLng(pos.coords.longitude);
-          setAddress(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-        },
-        () => setError('تعذر الحصول على الموقع. تأكد من تفعيل GPS'),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLat(pos.coords.latitude);
+            setLng(pos.coords.longitude);
+            setAddress(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+          },
+          () => setError('تعذر الحصول على الموقع. تأكد من تفعيل GPS'),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
       } else {
         setError('تعذر الوصول إلى خدمة الموقع');
       }
@@ -109,21 +109,22 @@ export default function CustomerSignupScreen() {
 
   if (showTerms) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.bg }]}>
-        <View style={styles.termsHeader}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#0B0B0E" />
+        <LinearGradient colors={['#16161A', '#0B0B0E']} style={styles.termsHeader}>
           <TouchableOpacity onPress={() => setShowTerms(false)} style={styles.backBtn}>
-            <ChevronRight color="#fff" size={24} />
+            <ChevronRight color="#D4AF37" size={24} />
           </TouchableOpacity>
           <Text style={styles.termsTitle}>الشروط والأحكام</Text>
-        </View>
-        <ScrollView contentContainerStyle={styles.termsBody}>
-          <Text style={[styles.termsText, { color: colors.text }]}>{TERMS_TEXT}</Text>
+        </LinearGradient>
+        <ScrollView contentContainerStyle={styles.termsBody} showsVerticalScrollIndicator={false}>
+          <Text style={styles.termsText}>{TERMS_TEXT}</Text>
           <TouchableOpacity
             style={[styles.agreeBtn, agreed && styles.agreeBtnActive]}
             onPress={() => { setAgreed(true); setShowTerms(false); }}
           >
-            <Check color="#fff" size={20} />
-            <Text style={styles.agreeBtnText}>موافق على الشروط</Text>
+            <Check color={agreed ? '#0B0B0E' : '#A1A1AA'} size={20} />
+            <Text style={[styles.agreeBtnText, agreed && styles.agreeBtnTextActive]}>موافق على الشروط</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -131,82 +132,83 @@ export default function CustomerSignupScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B0B0E" />
+      <LinearGradient colors={['#16161A', '#0B0B0E']} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronRight color="#fff" size={24} />
+          <ChevronRight color="#D4AF37" size={24} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Star color="#fff" size={18} fill="#fff" />
+          <Star color="#D4AF37" size={18} fill="#D4AF37" />
           <Text style={styles.headerTitle}>{BRAND_NAME} {BRAND_LOGO}</Text>
         </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.body}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>تسجيل زبون جديد</Text>
-        <View style={[styles.promoCard, { backgroundColor: colors.promoBg, borderColor: colors.promoBorder }]}>
-          <Text style={[styles.promoTitle, { color: colors.promoTitle }]}>عرض خاص!</Text>
-          <Text style={[styles.promoDesc, { color: colors.promoText }]}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <Text style={styles.pageTitle}>تسجيل زبون جديد</Text>
+        <View style={styles.promoCard}>
+          <Text style={styles.promoTitle}>عرض خاص!</Text>
+          <Text style={styles.promoDesc}>
             احصل على خصم {PROMO_CUSTOMER_DISCOUNT} {CURRENCY} على أول طلب صيانة
           </Text>
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>الاسم الكامل</Text>
+          <Text style={styles.label}>الاسم الكامل</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.cardBg, color: colors.text, borderColor: colors.inputBorder }]}
+            style={styles.input}
             value={fullName}
             onChangeText={setFullName}
             placeholder="أدخل اسمك الكامل"
-            placeholderTextColor={colors.subtext}
+            placeholderTextColor="#6B7280"
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>رقم الهاتف</Text>
-          <View style={[styles.phoneInput, { backgroundColor: colors.cardBg, borderColor: colors.inputBorder }]}>
-            <Phone color={colors.subtext} size={20} style={{ marginLeft: 8 }} />
+          <Text style={styles.label}>رقم الهاتف</Text>
+          <View style={styles.phoneInput}>
+            <Phone color="#D4AF37" size={20} style={{ marginLeft: 8 }} />
             <TextInput
-              style={[styles.phoneField, { color: colors.text }]}
+              style={styles.phoneField}
               value={phone}
               onChangeText={setPhone}
               placeholder="091XXXXXXX"
-              placeholderTextColor={colors.subtext}
+              placeholderTextColor="#6B7280"
               keyboardType="phone-pad"
             />
           </View>
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>كلمة المرور</Text>
+          <Text style={styles.label}>كلمة المرور</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.cardBg, color: colors.text, borderColor: colors.inputBorder }]}
+            style={styles.input}
             value={password}
             onChangeText={setPassword}
             placeholder="6 أحرف على الأقل"
-            placeholderTextColor={colors.subtext}
+            placeholderTextColor="#6B7280"
             secureTextEntry
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>الموقع الجغرافي</Text>
+          <Text style={styles.label}>الموقع الجغرافي</Text>
           <TouchableOpacity
-            style={[styles.locationBtn, { backgroundColor: colors.cardBg, borderColor: colors.inputBorder }]}
+            style={styles.locationBtn}
             onPress={getLocation}
           >
-            <MapPin color={lat ? colors.success : colors.primary} size={20} />
-            <Text style={[styles.locationText, { color: colors.text }]} numberOfLines={1}>
+            <MapPin color={lat ? '#D4AF37' : '#A1A1AA'} size={20} />
+            <Text style={styles.locationText} numberOfLines={1}>
               {lat ? address : 'اضغط لتحديد موقعك'}
             </Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.termsRow} onPress={() => setShowTerms(true)}>
-          <View style={[styles.checkbox, agreed && [styles.checkboxActive, { backgroundColor: colors.primary, borderColor: colors.primary }]]}>
-            {agreed && <Check color="#fff" size={16} />}
+          <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
+            {agreed && <Check color="#0B0B0E" size={16} strokeWidth={3} />}
           </View>
-          <Text style={[styles.termsTextSmall, { color: colors.text }]}>
+          <Text style={styles.termsTextSmall}>
             أوافق على الشروط والأحكام
           </Text>
         </TouchableOpacity>
@@ -214,7 +216,7 @@ export default function CustomerSignupScreen() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <TouchableOpacity
-          style={[styles.signupBtn, { backgroundColor: colors.primary }, loading && styles.signupBtnDisabled]}
+          style={[styles.signupBtn, loading && styles.signupBtnDisabled]}
           onPress={handleSignup}
           disabled={loading}
         >
@@ -228,7 +230,7 @@ export default function CustomerSignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0B0B0E' },
   header: {
     paddingTop: 50,
     paddingBottom: 20,
@@ -236,39 +238,47 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
   },
   backBtn: { padding: 4 },
   headerTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 18,
-    color: '#fff',
+    color: '#D4AF37',
   },
   pageTitle: {
     fontFamily: 'Cairo-Bold',
-    fontSize: 24,
+    fontSize: 22,
+    color: '#D4AF37',
     marginBottom: 16,
     marginTop: 8,
   },
   body: { padding: 24, paddingBottom: 40 },
   promoCard: {
+    backgroundColor: '#16161A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
     borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.35)',
   },
   promoTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 16,
+    color: '#D4AF37',
     marginBottom: 4,
   },
   promoDesc: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
+    color: '#E4E4E7',
   },
-  inputGroup: { marginBottom: 20 },
+  inputGroup: { marginBottom: 18 },
   label: {
     fontFamily: 'Cairo-Medium',
     fontSize: 14,
+    color: '#E4E4E7',
     marginBottom: 8,
   },
   input: {
@@ -277,7 +287,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontFamily: 'Cairo-Regular',
     fontSize: 16,
+    backgroundColor: '#16161A',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderWidth: 1,
+    color: '#FFFFFF',
   },
   phoneInput: {
     flexDirection: 'row',
@@ -285,6 +298,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: '#16161A',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderWidth: 1,
   },
   phoneField: {
@@ -292,6 +307,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo-Regular',
     fontSize: 16,
     textAlign: 'left',
+    color: '#FFFFFF',
   },
   locationBtn: {
     flexDirection: 'row',
@@ -299,12 +315,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: '#16161A',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderWidth: 1,
     gap: 10,
   },
   locationText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 15,
+    color: '#E4E4E7',
     flex: 1,
   },
   termsRow: {
@@ -318,66 +337,85 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#d1d5db',
+    borderColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxActive: {},
+  checkboxActive: {
+    backgroundColor: '#D4AF37',
+  },
   termsTextSmall: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
+    color: '#E4E4E7',
   },
   errorText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
-    color: '#ef4444',
+    color: '#EF4444',
     marginBottom: 16,
     textAlign: 'center',
   },
   signupBtn: {
+    backgroundColor: '#D4AF37',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   signupBtnDisabled: { opacity: 0.6 },
   signupBtnText: {
     fontFamily: 'Cairo-Bold',
     fontSize: 16,
-    color: '#fff',
+    color: '#0B0B0E',
   },
   termsHeader: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 16,
-    paddingTop: 50,
-    backgroundColor: '#2563eb',
+    borderBottomWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
   },
   termsTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 20,
-    color: '#fff',
+    color: '#D4AF37',
   },
   termsBody: { padding: 24, paddingBottom: 40 },
   termsText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 15,
     lineHeight: 26,
+    color: '#E4E4E7',
   },
   agreeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#9ca3af',
+    backgroundColor: '#27272A',
     borderRadius: 16,
     paddingVertical: 16,
     marginTop: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.3)',
   },
-  agreeBtnActive: { backgroundColor: '#16a34a' },
+  agreeBtnActive: {
+    backgroundColor: '#D4AF37',
+  },
   agreeBtnText: {
     fontFamily: 'Cairo-Bold',
     fontSize: 16,
-    color: '#fff',
+    color: '#A1A1AA',
+  },
+  agreeBtnTextActive: {
+    color: '#0B0B0E',
   },
 });

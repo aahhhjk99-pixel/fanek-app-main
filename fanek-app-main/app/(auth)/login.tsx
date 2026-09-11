@@ -8,6 +8,9 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronRight, Phone, Star, Check } from 'lucide-react-native';
@@ -106,66 +109,81 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="#0B0B0E" />
+
+      {/* Header / الهيدر الملكي */}
+      <LinearGradient colors={['#16161A', '#0B0B0E']} style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronRight color="#fff" size={24} />
+          <ChevronRight color="#D4AF37" size={24} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>تسجيل الدخول</Text>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Icon / الأيقونة الملكية */}
         <View style={styles.iconCircle}>
-          <Star color="#2563eb" size={32} fill="#2563eb" />
+          <Star color="#D4AF37" size={32} fill="#D4AF37" />
         </View>
 
-        <Text style={[styles.brandName, { color: colors.text }]}>
+        <Text style={styles.brandName}>
           {BRAND_NAME} {BRAND_LOGO}
         </Text>
-        <Text style={[styles.subtitle, { color: colors.subtext }]}>
+        <Text style={styles.subtitle}>
           أدخل رقم هاتفك وكلمة المرور للمتابعة
         </Text>
 
+        {/* Input: Phone */}
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>رقم الهاتف</Text>
-          <View style={[styles.phoneInput, { backgroundColor: colors.cardBg, borderColor: colors.inputBorder }]}>
-            <Phone color={colors.subtext} size={20} style={{ marginLeft: 8 }} />
+          <Text style={styles.label}>رقم الهاتف</Text>
+          <View style={styles.phoneInput}>
+            <Phone color="#D4AF37" size={20} style={{ marginLeft: 8 }} />
             <TextInput
-              style={[styles.phoneField, { color: colors.text }]}
+              style={styles.phoneField}
               value={phone}
               onChangeText={setPhone}
               placeholder="091XXXXXXX"
-              placeholderTextColor={colors.subtext}
+              placeholderTextColor="#6B7280"
               keyboardType="phone-pad"
             />
           </View>
         </View>
 
+        {/* Input: Password */}
         <View style={styles.inputGroup}>
-          <Text style={[styles.label, { color: colors.text }]}>كلمة المرور</Text>
+          <Text style={styles.label}>كلمة المرور</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.cardBg, color: colors.text, borderColor: colors.inputBorder }]}
+            style={styles.input}
             value={password}
             onChangeText={setPassword}
             placeholder="******"
-            placeholderTextColor={colors.subtext}
+            placeholderTextColor="#6B7280"
             secureTextEntry
           />
         </View>
 
+        {/* Remember Me */}
         <TouchableOpacity
           style={styles.rememberMeRow}
           onPress={() => setRememberMe(!rememberMe)}
           activeOpacity={0.7}
         >
           <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-            {rememberMe && <Check color="#fff" size={14} />}
+            {rememberMe && <Check color="#0B0B0E" size={14} strokeWidth={3} />}
           </View>
-          <Text style={[styles.rememberMeText, { color: colors.text }]}>تذكرني دائماً</Text>
+          <Text style={styles.rememberMeText}>تذكرني دائماً</Text>
         </TouchableOpacity>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+        {/* Submit Button */}
         <TouchableOpacity
           style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
           onPress={handleLogin}
@@ -173,22 +191,23 @@ export default function LoginScreen() {
           activeOpacity={0.8}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color="#0B0B0E" size="small" />
           ) : (
             <Text style={styles.loginBtnText}>دخول</Text>
           )}
         </TouchableOpacity>
 
+        {/* Signup Link */}
         <TouchableOpacity onPress={() => router.push('/(auth)/')} style={styles.signupLink}>
           <Text style={styles.signupLinkText}>ليس لديك حساب؟ سجل الآن</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#0B0B0E' },
   header: {
     paddingTop: 50,
     paddingBottom: 20,
@@ -196,40 +215,57 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(212, 175, 55, 0.25)',
   },
   backBtn: { padding: 4 },
   headerTitle: {
     fontFamily: 'Cairo-Bold',
     fontSize: 20,
-    color: '#fff',
+    color: '#D4AF37',
   },
-  body: { padding: 24, paddingTop: 40 },
+  body: {
+    flexGrow: 1,
+    padding: 24,
+    paddingTop: 30,
+    paddingBottom: 40,
+  },
   iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#dbeafe',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: 'rgba(212, 175, 55, 0.12)',
+    borderWidth: 1.5,
+    borderColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
     marginBottom: 16,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
   brandName: {
     fontFamily: 'Cairo-Bold',
     fontSize: 22,
     textAlign: 'center',
+    color: '#D4AF37',
     marginBottom: 4,
   },
   subtitle: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
     textAlign: 'center',
+    color: '#A1A1AA',
     marginBottom: 32,
   },
-  inputGroup: { marginBottom: 16 },
+  inputGroup: { marginBottom: 18 },
   label: {
     fontFamily: 'Cairo-Medium',
     fontSize: 14,
+    color: '#E4E4E7',
     marginBottom: 8,
   },
   input: {
@@ -238,7 +274,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     fontFamily: 'Cairo-Regular',
     fontSize: 16,
+    backgroundColor: '#16161A',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderWidth: 1,
+    color: '#FFFFFF',
   },
   phoneInput: {
     flexDirection: 'row',
@@ -246,6 +285,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    backgroundColor: '#16161A',
+    borderColor: 'rgba(212, 175, 55, 0.3)',
     borderWidth: 1,
   },
   phoneField: {
@@ -253,6 +294,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo-Regular',
     fontSize: 16,
     textAlign: 'left',
+    color: '#FFFFFF',
   },
   rememberMeRow: {
     flexDirection: 'row',
@@ -266,38 +308,44 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 5,
     borderWidth: 2,
-    borderColor: '#9ca3af',
+    borderColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   rememberMeText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
+    color: '#E4E4E7',
   },
   errorText: {
     fontFamily: 'Cairo-Regular',
     fontSize: 14,
-    color: '#ef4444',
+    color: '#EF4444',
     marginBottom: 16,
     textAlign: 'center',
   },
   loginBtn: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#D4AF37',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
     height: 54,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   loginBtnDisabled: { opacity: 0.7 },
   loginBtnText: {
     fontFamily: 'Cairo-Bold',
     fontSize: 16,
-    color: '#fff',
+    color: '#0B0B0E',
   },
   signupLink: {
     alignItems: 'center',
@@ -307,6 +355,6 @@ const styles = StyleSheet.create({
   signupLinkText: {
     fontFamily: 'Cairo-Medium',
     fontSize: 14,
-    color: '#2563eb',
+    color: '#F3CA63',
   },
 });

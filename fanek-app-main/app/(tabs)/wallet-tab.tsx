@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { router } from 'expo-router';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl,
-  Modal, TextInput, Alert, ActivityIndicator,
+  Modal, TextInput, ActivityIndicator,
 } from 'react-native';
-import { Wallet as WalletIcon, TrendingUp, Receipt, ChevronLeft, AlertCircle, Plus, Smartphone } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Wallet as WalletIcon, TrendingUp, Receipt, AlertCircle, Plus, Smartphone } from 'lucide-react-native';
 import { useAuth } from '@/lib/auth';
 import { useTheme } from '@/lib/theme-context';
 import { supabase } from '@/lib/supabase';
@@ -106,20 +107,28 @@ export default function WalletTabScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={[styles.header, { backgroundColor: colors.headerBg, borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.headerBg || colors.cardBg, borderBottomColor: colors.border }]}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>محفظتي</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} />}
       >
-        <View style={[styles.balanceCard, { backgroundColor: colors.walletCardBg }]}>
+        {/* كرت المحفظة متدرج بلون أزرق فاخر ثابت في الوضعين */}
+        <LinearGradient
+          colors={['#1d4ed8', '#2563eb']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.balanceCard}
+        >
           <View style={styles.balanceRow}>
-            <WalletIcon color="rgba(255,255,255,0.8)" size={24} />
+            <WalletIcon color="rgba(255,255,255,0.9)" size={22} />
             <Text style={styles.balanceLabel}>الرصيد الحالي</Text>
           </View>
-          <Text style={[styles.balanceAmount, { color: colors.walletCardText }]}>{formatCurrency(balance)}</Text>
+          <Text style={styles.balanceAmount}>{formatCurrency(balance)}</Text>
+          
           {isBlocked && (
             <View style={styles.blockedBanner}>
               <AlertCircle color="#fff" size={16} />
@@ -128,20 +137,21 @@ export default function WalletTabScreen() {
               </Text>
             </View>
           )}
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <TrendingUp color="rgba(255,255,255,0.7)" size={16} />
+              <TrendingUp color="rgba(255,255,255,0.8)" size={16} />
               <Text style={styles.statLabel}>إجمالي الأرباح</Text>
               <Text style={styles.statValue}>{formatCurrency(wallet?.total_earnings ?? 0)}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Receipt color="rgba(255,255,255,0.7)" size={16} />
+              <Receipt color="rgba(255,255,255,0.8)" size={16} />
               <Text style={styles.statLabel}>إجمالي العمولات</Text>
               <Text style={styles.statValue}>{formatCurrency(wallet?.total_commission ?? 0)}</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         <TouchableOpacity
           style={[styles.topupBtn, { backgroundColor: colors.primary }]}
@@ -183,7 +193,7 @@ export default function WalletTabScreen() {
         </View>
 
         {loading ? (
-          <Text style={[styles.emptyText, { color: colors.subtext }]}>جاري التحميل...</Text>
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
         ) : ledger.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.subtext }]}>لا توجد حركات مالية</Text>
         ) : (
@@ -201,7 +211,9 @@ export default function WalletTabScreen() {
             return (
               <View key={entry.id} style={[styles.ledgerCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 <View style={[styles.ledgerIcon, { backgroundColor: isPositive ? '#dcfce7' : '#fee2e2' }]}>
-                  <Text style={styles.ledgerIconText}>{isPositive ? '+' : '-'}</Text>
+                  <Text style={[styles.ledgerIconText, { color: isPositive ? '#16a34a' : '#ef4444' }]}>
+                    {isPositive ? '+' : '-'}
+                  </Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.ledgerType, { color: colors.text }]}>{typeLabels[entry.type] || entry.type}</Text>
@@ -211,7 +223,7 @@ export default function WalletTabScreen() {
                   ) : null}
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.ledgerAmount, { color: isPositive ? colors.success : colors.error }]}>
+                  <Text style={[styles.ledgerAmount, { color: isPositive ? '#16a34a' : '#ef4444' }]}>
                     {isPositive ? '+' : ''}{formatCurrency(Math.abs(entry.amount))}
                   </Text>
                   <Text style={[styles.ledgerBalance, { color: colors.subtext }]}>{formatCurrency(entry.balance_after)}</Text>
@@ -236,14 +248,23 @@ export default function WalletTabScreen() {
             <Text style={[styles.modalLabel, { color: colors.text }]}>اختر شركة الاتصالات</Text>
             <View style={styles.companyRow}>
               <TouchableOpacity
-                style={[styles.companyBtn, { borderColor: selectedCompany === 'libyana' ? '#16a34a' : colors.border }, selectedCompany === 'libyana' && { backgroundColor: '#dcfce7' }]}
+                style={[
+                  styles.companyBtn, 
+                  { borderColor: selectedCompany === 'libyana' ? '#16a34a' : colors.border }, 
+                  selectedCompany === 'libyana' && { backgroundColor: '#dcfce720' }
+                ]}
                 onPress={() => setSelectedCompany('libyana')}
               >
                 <Smartphone color="#16a34a" size={20} />
                 <Text style={[styles.companyBtnText, { color: colors.text }]}>ليبيانا</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
-                style={[styles.companyBtn, { borderColor: selectedCompany === 'al_madar' ? '#2563eb' : colors.border }, selectedCompany === 'al_madar' && { backgroundColor: '#dbeafe' }]}
+                style={[
+                  styles.companyBtn, 
+                  { borderColor: selectedCompany === 'al_madar' ? '#2563eb' : colors.border }, 
+                  selectedCompany === 'al_madar' && { backgroundColor: '#dbeafe20' }
+                ]}
                 onPress={() => setSelectedCompany('al_madar')}
               >
                 <Smartphone color="#2563eb" size={20} />
@@ -256,17 +277,23 @@ export default function WalletTabScreen() {
               {VOUCHER_VALUES.map((v) => (
                 <TouchableOpacity
                   key={v}
-                  style={[styles.valueBtn, { borderColor: selectedValue === v ? colors.primary : colors.border }, selectedValue === v && { backgroundColor: colors.primary }]}
+                  style={[
+                    styles.valueBtn, 
+                    { borderColor: selectedValue === v ? colors.primary : colors.border }, 
+                    selectedValue === v && { backgroundColor: colors.primary }
+                  ]}
                   onPress={() => setSelectedValue(v)}
                 >
-                  <Text style={[styles.valueBtnText, { color: selectedValue === v ? '#fff' : colors.text }]}>{v} {CURRENCY}</Text>
+                  <Text style={[styles.valueBtnText, { color: selectedValue === v ? '#fff' : colors.text }]}>
+                    {v} {CURRENCY}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <Text style={[styles.modalLabel, { color: colors.text }]}>كود التعبئة</Text>
             <TextInput
-              style={[styles.codeInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }]}
+              style={[styles.codeInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={voucherCode}
               onChangeText={setVoucherCode}
               placeholder="أدخل كود الكارت"
@@ -301,39 +328,39 @@ const styles = StyleSheet.create({
   header: { paddingTop: 50, paddingBottom: 16, paddingHorizontal: 16, borderBottomWidth: 1 },
   headerTitle: { fontFamily: 'Cairo-Bold', fontSize: 22 },
   body: { padding: 16, paddingBottom: 40 },
-  balanceCard: { borderRadius: 20, padding: 24, marginBottom: 16 },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  balanceLabel: { fontFamily: 'Cairo-Regular', fontSize: 14, color: 'rgba(255,255,255,0.8)' },
-  balanceAmount: { fontFamily: 'Cairo-Bold', fontSize: 36, marginBottom: 16 },
-  blockedBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(239,68,68,0.3)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 16 },
+  balanceCard: { borderRadius: 20, padding: 22, marginBottom: 16, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  balanceLabel: { fontFamily: 'Cairo-Regular', fontSize: 14, color: 'rgba(255,255,255,0.9)' },
+  balanceAmount: { fontFamily: 'Cairo-Bold', fontSize: 34, color: '#ffffff', marginBottom: 16 },
+  blockedBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(239,68,68,0.35)', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 16 },
   blockedText: { fontFamily: 'Cairo-Medium', fontSize: 12, color: '#fff', flex: 1 },
-  statsRow: { flexDirection: 'row', alignItems: 'center' },
+  statsRow: { flexDirection: 'row', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
   statItem: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.2)' },
-  statLabel: { fontFamily: 'Cairo-Regular', fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-  statValue: { fontFamily: 'Cairo-Bold', fontSize: 16, color: '#fff', marginTop: 4 },
+  statDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)' },
+  statLabel: { fontFamily: 'Cairo-Regular', fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  statValue: { fontFamily: 'Cairo-Bold', fontSize: 15, color: '#ffffff', marginTop: 2 },
   topupBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, paddingVertical: 14, marginBottom: 24 },
   topupBtnText: { fontFamily: 'Cairo-Bold', fontSize: 15, color: '#fff' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontFamily: 'Cairo-SemiBold', fontSize: 18, marginBottom: 12 },
   viewAllText: { fontFamily: 'Cairo-Medium', fontSize: 13 },
-  emptyText: { fontFamily: 'Cairo-Regular', fontSize: 14, textAlign: 'center', paddingVertical: 40 },
-  rechargeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1 },
+  emptyText: { fontFamily: 'Cairo-Regular', fontSize: 14, textAlign: 'center', paddingVertical: 30 },
+  rechargeCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1 },
   rechargeIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   rechargeCompany: { fontFamily: 'Cairo-SemiBold', fontSize: 14 },
   rechargeCode: { fontFamily: 'Cairo-Regular', fontSize: 12, marginTop: 2 },
   rechargeDate: { fontFamily: 'Cairo-Regular', fontSize: 11, marginTop: 2 },
   rechargeStatusBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   rechargeStatusText: { fontFamily: 'Cairo-Medium', fontSize: 11 },
-  ledgerCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1 },
-  ledgerIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  ledgerIconText: { fontFamily: 'Cairo-Bold', fontSize: 18, color: '#374151' },
+  ledgerCard: { flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1 },
+  ledgerIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  ledgerIconText: { fontFamily: 'Cairo-Bold', fontSize: 18 },
   ledgerType: { fontFamily: 'Cairo-SemiBold', fontSize: 14 },
   ledgerDate: { fontFamily: 'Cairo-Regular', fontSize: 12, marginTop: 2 },
   ledgerDesc: { fontFamily: 'Cairo-Regular', fontSize: 12, marginTop: 2 },
   ledgerAmount: { fontFamily: 'Cairo-Bold', fontSize: 15 },
   ledgerBalance: { fontFamily: 'Cairo-Regular', fontSize: 11, marginTop: 2 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontFamily: 'Cairo-Bold', fontSize: 20 },
